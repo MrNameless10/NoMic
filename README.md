@@ -31,8 +31,9 @@ The script uses only Xcode and built-in macOS tools. It creates temporary build 
 The protocols around hardware, preferences, shortcuts, login items, and feedback make the behavior testable without physical audio hardware.
 
 Left-click the menu-bar icon to open PrivateMic's controls. Right-click the icon
-to mute or unmute immediately. The icon intentionally remains compact so it does
-not compete with monitoring tools and other menu-bar applications for space.
+to mute or unmute immediately. Settings offers filled and outline microphone
+symbols, a state badge, and a compact text indicator. Icon changes are applied
+immediately and every style continues to reflect the real microphone state.
 
 ## How muting works
 
@@ -59,7 +60,7 @@ Click the shortcut field in Settings and press a new chord. At least one of Cont
 
 PrivateMic does not record or process audio and does not open an audio input stream. Reading and changing Core Audio device-control properties does not require microphone-capture permission. It also does not need Accessibility, Input Monitoring, administrator access, a privileged helper, App Sandbox capabilities, or network entitlements.
 
-If **Show notification when muting** is enabled, macOS asks for notification permission. That permission is used only for local mute/unmute notifications. Sound feedback uses local system sounds and needs no permission.
+If **Show notification when muting** is enabled, macOS asks for notification permission. That permission is used only for local mute/unmute notifications. Audio feedback can be selected separately for mute and unmute: no sound, one of several built-in macOS sounds, or a spoken “Microphone off/on” announcement. Sounds and speech are produced locally by AppKit, need no permission, and never capture microphone audio.
 
 All preferences remain in the local preferences domain for `com.local.PrivateMic`. System logs contain only operational error descriptions, not audio, keystrokes, or personal data. The source contains no URL loading, sockets, analytics, crash-reporting SDK, package dependencies, or updater.
 
@@ -115,6 +116,7 @@ To change the bundle identifier, edit **Signing & Capabilities → Bundle Identi
 - Some Bluetooth devices temporarily vanish or replace their Core Audio device identity while reconnecting. PrivateMic displays no device during that interval and refreshes when Core Audio reports the device again.
 - Hot-key conflicts can be reported when registration fails, but public APIs do not reveal the owning application and cannot detect every application-specific shortcut policy.
 - Local notifications depend on the user's macOS notification settings and Focus mode.
+- Built-in alert sounds and spoken feedback use the Mac's current output device and output volume. PrivateMic does not change either one.
 - This project is locally signed and not notarized by default, so moving it to a different Mac can produce a Gatekeeper warning.
 
 ## Manual testing checklist
@@ -138,11 +140,13 @@ Before relying on PrivateMic in calls, test the devices you use:
 - [ ] Try a plain letter with no modifier and verify it is rejected.
 - [ ] Try an already registered global shortcut and verify the previous shortcut remains active.
 - [ ] Enable notification feedback, approve permission, and verify muted/unmuted notices.
-- [ ] Enable and disable sound feedback independently.
+- [ ] Select different mute and unmute sounds, preview them, and verify each plays only for its matching state.
+- [ ] Select spoken feedback and verify it says “Microphone off” and “Microphone on”.
+- [ ] Try all menu-bar indicator styles and verify each updates immediately for muted and unmuted states.
 - [ ] Copy the Release app to `/Applications`, enable Launch at Login, log out and in, and verify silent menu-bar launch.
 - [ ] Restart the Mac and repeat the login-item check.
 - [ ] Reset settings and verify the default shortcut/options return and the login item is disabled.
 
 ## Automated tests
 
-The XCTest target covers preference serialization/reset, per-device volume isolation, native and fallback mute transitions, write verification, device changes, shortcut validation, and launch-at-login behavior through mocks. The tests do not need an actual microphone.
+The XCTest target covers preference serialization and legacy migration, per-device volume isolation, native and fallback mute transitions, feedback routing, live icon-style changes, write verification, device changes, shortcut validation, and launch-at-login behavior through mocks. The tests do not need an actual microphone.

@@ -4,10 +4,16 @@ import UserNotifications
 
 protocol NotificationManaging: AnyObject {
     func requestAuthorization(completion: @escaping @Sendable (Bool) -> Void)
-    func provideFeedback(state: MicrophoneState, notification: Bool, sound: Bool)
+    func provideFeedback(
+        state: MicrophoneState,
+        notification: Bool,
+        audio: AudioFeedback
+    )
 }
 
 final class NotificationManager: NotificationManaging {
+    private let speechSynthesizer = NSSpeechSynthesizer()
+
     func requestAuthorization(completion: @escaping @Sendable (Bool) -> Void) {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert]) {
             granted, _ in
@@ -15,7 +21,11 @@ final class NotificationManager: NotificationManaging {
         }
     }
 
-    func provideFeedback(state: MicrophoneState, notification: Bool, sound: Bool) {
+    func provideFeedback(
+        state: MicrophoneState,
+        notification: Bool,
+        audio: AudioFeedback
+    ) {
         guard state == .muted || state == .unmuted else { return }
         if notification {
             let content = UNMutableNotificationContent()
@@ -26,11 +36,21 @@ final class NotificationManager: NotificationManaging {
             )
             UNUserNotificationCenter.current().add(request)
         }
-        if sound {
-            let name = state == .muted ? "Tink" : "Pop"
-            if NSSound(named: NSSound.Name(name))?.play() != true {
-                NSSound.beep()
-            }
+        play(audio, for: state)
+    }
+
+    private func play(_ audio: AudioFeedback, for state: MicrophoneState) {
+        if audio == .spoken {
+            speechSynthesizer.stopSpeaking()
+            speechSynthesizer.startSpeaking(
+                state == .muted ? "Microphone off" : "Microphone on"
+            )
+            return
+        }
+
+        guard let name = audio.soundName else { return }
+        if NSSound(named: NSSound.Name(name))?.play() != true {
+            NSSound.beep()
         }
     }
 }

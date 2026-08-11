@@ -121,13 +121,21 @@ final class MockLoginItemManager: LoginItemManaging {
 final class MockNotificationManager: NotificationManaging {
     var authorizationGranted = true
     var feedback: MicrophoneState?
+    var audioFeedback: AudioFeedback?
+    var notificationRequested = false
 
     func requestAuthorization(completion: @escaping @Sendable (Bool) -> Void) {
         completion(authorizationGranted)
     }
 
-    func provideFeedback(state: MicrophoneState, notification: Bool, sound: Bool) {
+    func provideFeedback(
+        state: MicrophoneState,
+        notification: Bool,
+        audio: AudioFeedback
+    ) {
         feedback = state
+        audioFeedback = audio
+        notificationRequested = notification
     }
 }
 

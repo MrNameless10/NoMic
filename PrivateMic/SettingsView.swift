@@ -40,7 +40,7 @@ struct SettingsView: View {
                 .tag(SettingsTab.device)
         }
         .padding(12)
-        .frame(width: 520, height: 470)
+        .frame(width: 520, height: 500)
         .confirmationDialog(
             "Reset all PrivateMic settings?",
             isPresented: $showingResetConfirmation
@@ -75,6 +75,18 @@ struct SettingsView: View {
                 }
             }
 
+            Section("Menu Bar") {
+                Picker("Indicator style", selection: iconStyleSelection) {
+                    ForEach(MenuBarIconStyle.allCases) { style in
+                        Label(style.displayName, systemImage: style.previewSymbol)
+                            .tag(style)
+                    }
+                }
+                Text("The indicator changes immediately and always follows the microphone state.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("Privacy") {
                 Label("No audio recording or audio sample processing", systemImage: "waveform.slash")
                 Label("No analytics, tracking, or network requests", systemImage: "network.slash")
@@ -94,7 +106,7 @@ struct SettingsView: View {
 
     private var feedbackPane: some View {
         Form {
-            Section("Mute Confirmation") {
+            Section("Notifications") {
                 Toggle(
                     "Show a notification after toggling",
                     isOn: binding(
@@ -102,21 +114,27 @@ struct SettingsView: View {
                         setter: { appState.setShowNotification($0) }
                     )
                 )
-                Toggle(
-                    "Play a system sound after toggling",
-                    isOn: binding(
-                        \.playSound,
-                        setter: { appState.setPlaySound($0) }
-                    )
+            }
+
+            Section("Audio Feedback") {
+                feedbackPicker(
+                    title: "When microphone turns off",
+                    state: .muted,
+                    selection: mutedFeedbackSelection
+                )
+                feedbackPicker(
+                    title: "When microphone turns on",
+                    state: .unmuted,
+                    selection: unmutedFeedbackSelection
                 )
             }
 
             Section {
                 Label(
-                    "The menu-bar icon always reflects the microphone state.",
-                    systemImage: "menubar.rectangle"
+                    "Spoken feedback says “Microphone off” or “Microphone on” using macOS speech.",
+                    systemImage: "speaker.wave.2"
                 )
-                Text("Notification and sound feedback can be enabled independently.")
+                Text("Mute and unmute sounds are selected independently. Everything plays locally and no microphone permission is needed.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -243,6 +261,45 @@ struct SettingsView: View {
                 appState.selectInputDevice(device)
             }
         )
+    }
+
+    private var iconStyleSelection: Binding<MenuBarIconStyle> {
+        Binding(
+            get: { appState.preferences.menuBarIconStyle },
+            set: { appState.setMenuBarIconStyle($0) }
+        )
+    }
+
+    private var mutedFeedbackSelection: Binding<AudioFeedback> {
+        Binding(
+            get: { appState.preferences.mutedFeedback },
+            set: { appState.setMutedFeedback($0) }
+        )
+    }
+
+    private var unmutedFeedbackSelection: Binding<AudioFeedback> {
+        Binding(
+            get: { appState.preferences.unmutedFeedback },
+            set: { appState.setUnmutedFeedback($0) }
+        )
+    }
+
+    private func feedbackPicker(
+        title: String,
+        state: MicrophoneState,
+        selection: Binding<AudioFeedback>
+    ) -> some View {
+        HStack {
+            Picker(title, selection: selection) {
+                ForEach(AudioFeedback.allCases) { feedback in
+                    Text(feedback.displayName).tag(feedback)
+                }
+            }
+            Button("Preview") {
+                appState.previewFeedback(selection.wrappedValue, state: state)
+            }
+            .disabled(selection.wrappedValue == .none)
+        }
     }
 
     private var statusCard: some View {

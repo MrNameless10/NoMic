@@ -60,7 +60,7 @@ final class AppState: ObservableObject {
             notificationManager.provideFeedback(
                 state: microphoneState,
                 notification: preferences.showNotification,
-                sound: preferences.playSound
+                audio: feedback(for: microphoneState)
             )
         } catch {
             setError(error.localizedDescription)
@@ -122,8 +122,24 @@ final class AppState: ObservableObject {
         }
     }
 
-    func setPlaySound(_ enabled: Bool) {
-        updatePreferences { $0.playSound = enabled }
+    func setMutedFeedback(_ feedback: AudioFeedback) {
+        updatePreferences { $0.mutedFeedback = feedback }
+    }
+
+    func setUnmutedFeedback(_ feedback: AudioFeedback) {
+        updatePreferences { $0.unmutedFeedback = feedback }
+    }
+
+    func previewFeedback(_ feedback: AudioFeedback, state: MicrophoneState) {
+        notificationManager.provideFeedback(
+            state: state,
+            notification: false,
+            audio: feedback
+        )
+    }
+
+    func setMenuBarIconStyle(_ style: MenuBarIconStyle) {
+        updatePreferences { $0.menuBarIconStyle = style }
     }
 
     func selectInputDevice(_ device: AudioDevice) {
@@ -254,6 +270,10 @@ final class AppState: ObservableObject {
         change(&latest)
         preferencesStore.preferences = latest
         preferences = latest
+    }
+
+    private func feedback(for state: MicrophoneState) -> AudioFeedback {
+        state == .muted ? preferences.mutedFeedback : preferences.unmutedFeedback
     }
 
     private func setError(_ message: String) {

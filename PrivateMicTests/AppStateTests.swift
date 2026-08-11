@@ -3,6 +3,29 @@ import XCTest
 
 @MainActor
 final class AppStateTests: XCTestCase {
+    func testToggleUsesFeedbackSelectedForResultingState() {
+        let hardware = MockAudioHardware()
+        hardware.device = .native()
+        hardware.muteValues = [0: false]
+        var preferences = AppPreferences.defaults
+        preferences.mutedFeedback = .spoken
+        preferences.unmutedFeedback = .glass
+        let feedback = MockNotificationManager()
+        let state = AppState(
+            hardware: hardware,
+            preferencesStore: MemoryPreferencesStore(preferences),
+            shortcutManager: MockShortcutManager(),
+            loginItemManager: MockLoginItemManager(),
+            notificationManager: feedback
+        )
+
+        state.toggleMute()
+
+        XCTAssertEqual(state.microphoneState, .muted)
+        XCTAssertEqual(feedback.feedback, .muted)
+        XCTAssertEqual(feedback.audioFeedback, .spoken)
+    }
+
     func testSelectingInputDeviceUpdatesDefaultWithoutMutingIt() {
         let first = AudioDevice.native(id: 1, uid: "first")
         let second = AudioDevice.native(id: 2, uid: "second")

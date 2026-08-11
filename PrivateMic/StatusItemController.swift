@@ -7,10 +7,11 @@ final class StatusItemController {
     private let appState: AppState
     private let statusItem: NSStatusItem
     private let popover: NSPopover
-    private var stateObservation: AnyCancellable?
+    private var presentationObservation: AnyCancellable?
 
     private(set) var isInstalled = false
     private(set) var currentSymbolName = "exclamationmark.triangle"
+    private(set) var currentTitle = ""
 
     init(appState: AppState) {
         self.appState = appState
@@ -22,17 +23,26 @@ final class StatusItemController {
         configurePopover()
         configureStatusButton()
 
-        stateObservation = appState.$microphoneState
-            .sink { [weak self] state in
-                self?.updateIcon(for: state)
+        presentationObservation = Publishers.CombineLatest(
+            appState.$microphoneState,
+            appState.$preferences
+        )
+            .sink { [weak self] state, preferences in
+                self?.updateIcon(
+                    for: state,
+                    style: preferences.menuBarIconStyle
+                )
             }
-        updateIcon(for: appState.microphoneState)
+        updateIcon(
+            for: appState.microphoneState,
+            style: appState.preferences.menuBarIconStyle
+        )
         isInstalled = statusItem.button != nil
     }
 
     func invalidate() {
         popover.close()
-        stateObservation = nil
+        presentationObservation = nil
         if isInstalled {
             NSStatusBar.system.removeStatusItem(statusItem)
             isInstalled = false
@@ -60,35 +70,77 @@ final class StatusItemController {
         button.imagePosition = .imageOnly
     }
 
-    private func updateIcon(for state: MicrophoneState) {
-        let symbolName: String
+    private func updateIcon(
+        for state: MicrophoneState,
+        style: MenuBarIconStyle
+    ) {
         let accessibilityValue: String
         switch state {
-        case .muted:
-            symbolName = "mic.slash.fill"
-            accessibilityValue = "Muted"
-        case .unmuted:
-            symbolName = "mic.fill"
-            accessibilityValue = "Unmuted"
-        case .unsupported, .unavailable:
-            symbolName = "exclamationmark.triangle"
-            accessibilityValue = state.title
+        case .muted: accessibilityValue = "Muted"
+        case .unmuted: accessibilityValue = "Unmuted"
+        case .unsupported, .unavailable: accessibilityValue = state.title
         }
 
-        currentSymbolName = symbolName
-        let image = NSImage(
-            systemSymbolName: symbolName,
-            accessibilityDescription: nil
-        )
-        let configuration = NSImage.SymbolConfiguration(
-            pointSize: 15,
-            weight: .medium
-        )
-        let configuredImage = image?.withSymbolConfiguration(configuration)
-        configuredImage?.isTemplate = true
-        statusItem.button?.image = configuredImage
-        statusItem.button?.toolTip = tooltip(for: state)
-        statusItem.button?.setAccessibilityValue(accessibilityValue)
+        guard let button = statusItem.button else { return }
+        statusItem.length = style == .text
+            ? NSStatusItem.variableLength
+            : NSStatusItem.squareLength
+
+        if style == .text {
+            let title: String
+            switch state {
+            case .muted: title = "MUTE"
+            case .unmuted: title = "MIC"
+            case .unsupported, .unavailable: title = "!"
+            }
+            currentSymbolName = ""
+            currentTitle = title
+            button.image = nil
+            button.title = title
+            button.font = .systemFont(ofSize: 10, weight: .semibold)
+        } else {
+            let symbolName = symbolName(for: state, style: style)
+            currentSymbolName = symbolName
+            currentTitle = ""
+            button.title = ""
+            let image = NSImage(
+                systemSymbolName: symbolName,
+                accessibilityDescription: nil
+            ) ?? NSImage(
+                systemSymbolName: "mic.fill",
+                accessibilityDescription: nil
+            )
+            let configuration = NSImage.SymbolConfiguration(
+                pointSize: 15,
+                weight: .medium
+            )
+            let configuredImage = image?.withSymbolConfiguration(configuration)
+            configuredImage?.isTemplate = true
+            button.image = configuredImage
+        }
+
+        button.toolTip = tooltip(for: state)
+        button.setAccessibilityValue(accessibilityValue)
+    }
+
+    private func symbolName(
+        for state: MicrophoneState,
+        style: MenuBarIconStyle
+    ) -> String {
+        if state == .unsupported || state == .unavailable {
+            return "exclamationmark.triangle"
+        }
+
+        switch style {
+        case .microphone:
+            return state == .muted ? "mic.slash.fill" : "mic.fill"
+        case .microphoneOutline:
+            return state == .muted ? "mic.slash" : "mic"
+        case .stateBadge:
+            return state == .muted ? "xmark.circle.fill" : "checkmark.circle.fill"
+        case .text:
+            return ""
+        }
     }
 
     @objc

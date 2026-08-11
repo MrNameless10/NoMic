@@ -107,7 +107,7 @@ final class AppState: ObservableObject {
             return
         }
         notificationManager.requestAuthorization { [weak self] granted in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 guard let self else { return }
                 if granted {
                     self.updatePreferences { $0.showNotification = true }

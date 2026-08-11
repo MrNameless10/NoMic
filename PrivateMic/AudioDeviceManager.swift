@@ -18,7 +18,7 @@ final class AudioDeviceManager: ObservableObject {
         refresh()
         do {
             try hardware.startMonitoring { [weak self] in
-                Task { @MainActor in self?.onHardwareChange?() }
+                Task { @MainActor [weak self] in self?.onHardwareChange?() }
             }
         } catch {
             errorMessage = error.localizedDescription

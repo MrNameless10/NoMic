@@ -12,7 +12,23 @@ trap cleanup EXIT
 
 cd "$repository_root"
 
+version="$(
+    xcodebuild \
+        -project PrivateMic.xcodeproj \
+        -scheme PrivateMic \
+        -configuration Release \
+        -derivedDataPath "$derived_data" \
+        -showBuildSettings 2>/dev/null \
+        | awk '/ MARKETING_VERSION = / { print $3; exit }'
+)"
+
+if [[ ! "$version" =~ '^[0-9]+\.[0-9]+\.[0-9]+$' ]]; then
+    print -u2 "Invalid MARKETING_VERSION: ${version:-missing}. Expected MAJOR.MINOR.PATCH."
+    exit 1
+fi
+
 xcodebuild \
+    -quiet \
     -project PrivateMic.xcodeproj \
     -scheme PrivateMic \
     -configuration Release \
@@ -41,12 +57,14 @@ ditto --noextattr --noqtn "$app_path" "$dmg_staging/PrivateMic.app"
 ln -s /Applications "$dmg_staging/Applications"
 
 mkdir -p Dist
+dmg_path="Dist/PrivateMic-${version}.dmg"
 hdiutil create \
     -volname PrivateMic \
     -srcfolder "$dmg_staging" \
     -ov \
     -format UDZO \
-    Dist/PrivateMic-1.0.dmg
+    "$dmg_path"
 
-hdiutil verify Dist/PrivateMic-1.0.dmg
-shasum -a 256 Dist/PrivateMic-1.0.dmg
+hdiutil verify "$dmg_path"
+shasum -a 256 "$dmg_path"
+print "$dmg_path"

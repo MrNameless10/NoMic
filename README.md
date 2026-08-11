@@ -1,12 +1,17 @@
 # PrivateMic
 
+[![CI](https://github.com/MrNameless10/NoMic/actions/workflows/ci.yml/badge.svg)](https://github.com/MrNameless10/NoMic/actions/workflows/ci.yml)
+[Releases](https://github.com/MrNameless10/NoMic/releases) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md)
+
 PrivateMic is a small, native macOS menu-bar application that toggles the current default input device. It is designed for personal, offline use and has no analytics, accounts, updater, telemetry, advertising, or network code.
 
 Requirements: macOS 13 Ventura or later and Xcode 14.1 or later. The temporary product name is `PrivateMic`, the bundle identifier is `com.local.PrivateMic`, and the default shortcut is Control–Option–M (`⌃⌥M`).
 
-## Ready-to-install build
+## Releases
 
-The locally signed universal Release build is packaged at `Dist/PrivateMic-1.0.dmg`. Open the DMG and drag PrivateMic onto its Applications shortcut. It supports both Apple silicon and Intel Macs and retains the hardened runtime with intentionally empty entitlements.
+Versioned DMGs and SHA-256 checksum manifests are published on the [GitHub Releases page](https://github.com/MrNameless10/NoMic/releases). Open the DMG and drag PrivateMic onto its Applications shortcut. Release builds support both Apple silicon and Intel Macs and retain the hardened runtime with intentionally empty entitlements.
+
+The repository still contains the original `Dist/PrivateMic-1.0.dmg` baseline. New binaries are attached to GitHub Releases instead of being committed to source control.
 
 The original icon master and its transparency-preparation source are in `Artwork/`. The complete macOS icon set is compiled from `PrivateMic/Assets.xcassets/AppIcon.appiconset`.
 
@@ -16,7 +21,13 @@ To reproduce the signed app and DMG after changing the source, run:
 ./Scripts/build-release.sh
 ```
 
-The script uses only Xcode and built-in macOS tools. It creates temporary build directories under `/tmp`, verifies the application signature and disk-image checksum, and writes the finished DMG under `Dist/`.
+The script uses only Xcode and built-in macOS tools. It creates temporary build directories under `/tmp`, reads the semantic version from the Xcode target, verifies the application signature and disk-image checksum, and writes `Dist/PrivateMic-MAJOR.MINOR.PATCH.dmg`.
+
+## Development and release process
+
+`main` is kept release-ready. Work is developed on short-lived branches and merged through pull requests after the `Build and test` check passes. A `vMAJOR.MINOR.PATCH` tag starts the Release workflow, which runs tests, builds and verifies the DMG, generates a checksum manifest, and publishes a GitHub Release with generated notes.
+
+See [Branching and repository rules](docs/BRANCHING.md) and [Releasing PrivateMic](docs/RELEASING.md) for the exact workflow. GitHub Actions uses ad-hoc signing because Developer ID notarization requires private Apple credentials; those credentials are not stored in this repository.
 
 ## Architecture
 

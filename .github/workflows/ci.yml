@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build and test
+    runs-on: macos-14
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6.0.3
+
+      - name: Show toolchain
+        run: xcodebuild -version
+
+      - name: Build and run unit tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project PrivateMic.xcodeproj \
+            -scheme PrivateMic \
+            -configuration Debug \
+            -destination "platform=macOS" \
+            -derivedDataPath "$RUNNER_TEMP/PrivateMicDerivedData" \
+            test \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee "$RUNNER_TEMP/xcodebuild.log"
+
+      - name: Upload failure log
+        if: failure()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: xcodebuild-log-${{ github.run_id }}
+          path: ${{ runner.temp }}/xcodebuild.log
+          if-no-files-found: ignore
+          retention-days: 7

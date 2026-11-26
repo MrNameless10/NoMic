@@ -9,6 +9,7 @@ All notable user-facing changes to PrivateMic are documented here. The project u
 - Automated macOS build and unit-test checks for pushes and pull requests.
 - Tag-driven GitHub Releases with a verified DMG and SHA-256 checksum manifest.
 - Contribution, issue, security, branching, and release documentation.
+- MIT License.
 
 ## 1.0.0
 

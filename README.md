@@ -1,7 +1,7 @@
 # PrivateMic
 
 [![CI](https://github.com/MrNameless10/NoMic/actions/workflows/ci.yml/badge.svg)](https://github.com/MrNameless10/NoMic/actions/workflows/ci.yml)
-[Releases](https://github.com/MrNameless10/NoMic/releases) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md)
+[Releases](https://github.com/MrNameless10/NoMic/releases) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [License](LICENSE)
 
 PrivateMic is a small, native macOS menu-bar application that toggles the current default input device. It is designed for personal, offline use and has no analytics, accounts, updater, telemetry, advertising, or network code.
 
@@ -161,3 +161,7 @@ Before relying on PrivateMic in calls, test the devices you use:
 ## Automated tests
 
 The XCTest target covers preference serialization and legacy migration, per-device volume isolation, native and fallback mute transitions, feedback routing, live icon-style changes, write verification, device changes, shortcut validation, and launch-at-login behavior through mocks. The tests do not need an actual microphone.
+
+## License
+
+PrivateMic is released under the [MIT License](LICENSE).
